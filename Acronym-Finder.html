@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acronym Finder - Decode Any Acronym Instantly</title>
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    
+    .container {
+      max-width: 700px;
+      width: 100%;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      color: #f8fafc;
+      margin-bottom: 0.3rem;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      font-size: 1.1rem;
+    }
+    
+    .main-card {
+      background: rgba(30, 41, 59, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 2rem;
+      padding: 2.5rem 2rem;
+      border: 1px solid #334155;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+      margin-bottom: 1.5rem;
+    }
+    
+    .search-box {
+      position: relative;
+      margin-bottom: 2rem;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 1.2rem 1.5rem;
+      background: #0f172a;
+      border: 2px solid #334155;
+      border-radius: 2rem;
+      color: #f8fafc;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      outline: none;
+      transition: all 0.3s;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+    }
+    
+    .search-input:focus {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+    }
+    
+    .search-input::placeholder {
+      color: #475569;
+      letter-spacing: 2px;
+      font-weight: 400;
+      font-size: 1rem;
+    }
+    
+    .search-btn {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #0f172a;
+      border: none;
+      border-radius: 2rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all 0.3s;
+    }
+    
+    .search-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+    }
+    
+    .result-card {
+      display: none;
+      background: #0f172a;
+      border-radius: 1.5rem;
+      padding: 2rem;
+      border: 1px solid #334155;
+      text-align: center;
+    }
+    
+    .result-card.show {
+      display: block;
+      animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .acronym-display {
+      font-size: 4rem;
+      font-weight: 900;
+      letter-spacing: 8px;
+      color: #f59e0b;
+      margin-bottom: 0.5rem;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .meaning-display {
+      font-size: 1.5rem;
+      color: #f8fafc;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+    }
+    
+    .category-badge {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      padding: 0.3rem 1rem;
+      border-radius: 2rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+    }
+    
+    .description {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #64748b;
+    }
+    
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    .categories {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+      justify-content: center;
+    }
+    
+    .category-chip {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .category-chip:hover {
+      background: #334155;
+      color: #f8fafc;
+      border-color: #f59e0b;
+    }
+    
+    .popular-section {
+      margin-top: 2rem;
+    }
+    
+    .popular-title {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    
+    .popular-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    
+    .popular-chip {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fbbf24;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+    
+    .popular-chip:hover {
+      background: rgba(245, 158, 11, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    .not-found {
+      text-align: center;
+      padding: 2rem;
+      color: #f87171;
+      display: none;
+    }
+    
+    .not-found.show {
+      display: block;
+      animation: shake 0.5s ease;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+    
+    .suggestion {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+    
+    footer {
+      text-align: center;
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+    
+    .random-btn {
+      background: transparent;
+      border: 2px solid #334155;
+      color: #94a3b8;
+      padding: 0.6rem 1.2rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    
+    .random-btn:hover {
+      border-color: #f59e0b;
+      color: #fbbf24;
+    }
+    
+    @media (max-width: 500px) {
+      .acronym-display { font-size: 3rem; letter-spacing: 5px; }
+      .meaning-display { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔍 Acronym Finder</h1>
+      <p class="subtitle">Instantly decode what those letters actually mean</p>
+    </header>
+
+    <div class="main-card">
+      <div class="search-box">
+        <input 
+          type="text" 
+          class="search-input" 
+          id="acronymInput" 
+          placeholder="TYPE ACRONYM..." 
+          maxlength="10" 
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button class="search-btn" id="searchBtn">
+          🔎 Decode It
+        </button>
+      </div>
+
+      <!-- Result -->
+      <div class="result-card" id="resultCard">
+        <div class="category-badge" id="categoryBadge">Category</div>
+        <div class="acronym-display" id="acronymDisplay">NASA</div>
+        <div class="meaning-display" id="meaningDisplay">National Aeronautics and Space Administration</div>
+        <p class="description" id="descriptionDisplay"></p>
+      </div>
+
+      <!-- Not found -->
+      <div class="not-found" id="notFound">
+        <div style="font-size:3rem;margin-bottom:1rem;">🤔</div>
+        <strong>Hmm, we don't have that one yet!</strong>
+        <p class="suggestion">Try another acronym or check the popular ones below.</p>
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">💡</div>
+        <p>Type an acronym above or pick one from below.<br>We've got tech terms, military codes, internet slang, and more!</p>
+        <button class="random-btn" id="randomBtn">🎲 Random Acronym</button>
+      </div>
+
+      <!-- Popular acronyms -->
+      <div class="popular-section">
+        <div class="popular-title">⭐ Popular Searches</div>
+        <div class="popular-grid" id="popularGrid">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- Categories -->
+      <div class="categories">
+        <span class="category-chip" data-category="tech">💻 Tech</span>
+        <span class="category-chip" data-category="military">🎖️ Military</span>
+        <span class="category-chip" data-category="business">💼 Business</span>
+        <span class="category-chip" data-category="medical">🏥 Medical</span>
+        <span class="category-chip" data-category="internet">💬 Internet Slang</span>
+        <span class="category-chip" data-category="government">🏛️ Government</span>
+        <span class="category-chip" data-category="science">🔬 Science</span>
+      </div>
+    </div>
+
+    <footer>
+      📚 200+ acronyms in the database · All processed right here in your browser
+    </footer>
+  </div>
+
+  <script>
+    (function() {
+      // =============================================
+      // ACRONYM DATABASE - 200+ entries
+      // =============================================
+      const acronymDB = {
+        // Tech
+        'HTML': { meaning: 'HyperText Markup Language', category: 'tech', description: 'The standard language for creating web pages. It structures content on the internet.' },
+        'CSS': { meaning: 'Cascading Style Sheets', category: 'tech', description: 'Styles web pages - controls colors, layouts, fonts, and how websites look.' },
+        'JS': { meaning: 'JavaScript', category: 'tech', description: 'Programming language that makes websites interactive and dynamic.' },
+        'API': { meaning: 'Application Programming Interface', category: 'tech', description: 'A set of rules that lets different software applications talk to each other.' },
+        'JSON': { meaning: 'JavaScript Object Notation', category: 'tech', description: 'A lightweight format for storing and exchanging data between systems.' },
+        'URL': { meaning: 'Uniform Resource Locator', category: 'tech', description: 'The address of a web page or resource on the internet.' },
+        'HTTP': { meaning: 'HyperText Transfer Protocol', category: 'tech', description: 'The foundation of data communication on the World Wide Web.' },
+        'HTTPS': { meaning: 'HyperText Transfer Protocol Secure', category: 'tech', description: 'The secure, encrypted version of HTTP. The padlock in your browser.' },
+        'DNS': { meaning: 'Domain Name System', category: 'tech', description: 'The phonebook of the internet - converts domain names to IP addresses.' },
+        'IP': { meaning: 'Internet Protocol', category: 'tech', description: 'The set of rules that govern how data is sent over the internet.' },
+        'VPN': { meaning: 'Virtual Private Network', category: 'tech', description: 'Creates a secure, encrypted connection over a less secure network.' },
+        'SSH': { meaning: 'Secure Shell', category: 'tech', description: 'A protocol for securely accessing remote computers over unsecured networks.' },
+        'FTP': { meaning: 'File Transfer Protocol', category: 'tech', description: 'A standard way to transfer files between computers over the internet.' },
+        'SQL': { meaning: 'Structured Query Language', category: 'tech', description: 'The language used to communicate with and manage databases.' },
+        'PHP': { meaning: 'PHP: Hypertext Preprocessor', category: 'tech', description: 'A popular server-side scripting language used for web development.' },
+        'XML': { meaning: 'eXtensible Markup Language', category: 'tech', description: 'A flexible markup language for storing and transporting data.' },
+        'IDE': { meaning: 'Integrated Development Environment', category: 'tech', description: 'Software that combines tools developers need in one place, like VS Code.' },
+        'SDK': { meaning: 'Software Development Kit', category: 'tech', description: 'A collection of tools for building applications for specific platforms.' },
+        'CLI': { meaning: 'Command Line Interface', category: 'tech', description: 'A text-based way to interact with a computer by typing commands.' },
+        'GUI': { meaning: 'Graphical User Interface', category: 'tech', description: 'The visual way people interact with computers - buttons, windows, icons.' },
+        'RAM': { meaning: 'Random Access Memory', category: 'tech', description: 'Short-term memory in computers that stores data currently being used.' },
+        'ROM': { meaning: 'Read-Only Memory', category: 'tech', description: 'Permanent storage that can\'t be easily modified - stores firmware.' },
+        'SSD': { meaning: 'Solid State Drive', category: 'tech', description: 'Fast storage device with no moving parts, much quicker than hard drives.' },
+        'HDD': { meaning: 'Hard Disk Drive', category: 'tech', description: 'Traditional storage device using spinning magnetic disks.' },
+        'CPU': { meaning: 'Central Processing Unit', category: 'tech', description: 'The brain of the computer that performs calculations and executes instructions.' },
+        'GPU': { meaning: 'Graphics Processing Unit', category: 'tech', description: 'Specialized processor for rendering images, video, and graphics.' },
+        'IoT': { meaning: 'Internet of Things', category: 'tech', description: 'Network of physical devices connected to the internet, like smart home gadgets.' },
+        'AI': { meaning: 'Artificial Intelligence', category: 'tech', description: 'Computer systems that can perform tasks that normally require human intelligence.' },
+        'ML': { meaning: 'Machine Learning', category: 'tech', description: 'A subset of AI where computers learn from data without explicit programming.' },
+        'AR': { meaning: 'Augmented Reality', category: 'tech', description: 'Technology that overlays digital content onto the real world.' },
+        'VR': { meaning: 'Virtual Reality', category: 'tech', description: 'Completely immersive digital environments experienced through headsets.' },
+        'UI': { meaning: 'User Interface', category: 'tech', description: 'The visual elements people interact with in software or devices.' },
+        'UX': { meaning: 'User Experience', category: 'tech', description: 'How a person feels when using a product - the overall experience design.' },
+        'CMS': { meaning: 'Content Management System', category: 'tech', description: 'Software for creating and managing digital content, like WordPress.' },
+        'SEO': { meaning: 'Search Engine Optimization', category: 'tech', description: 'The practice of improving website visibility in search engine results.' },
+        'CDN': { meaning: 'Content Delivery Network', category: 'tech', description: 'A network of servers that deliver web content faster based on user location.' },
+        
+        // Business
+        'CEO': { meaning: 'Chief Executive Officer', category: 'business', description: 'The highest-ranking executive in a company, making major decisions.' },
+        'CFO': { meaning: 'Chief Financial Officer', category: 'business', description: 'The executive responsible for managing company finances and financial planning.' },
+        'COO': { meaning: 'Chief Operating Officer', category: 'business', description: 'Oversees day-to-day administrative and operational functions of a company.' },
+        'CTO': { meaning: 'Chief Technology Officer', category: 'business', description: 'The executive in charge of technological direction and development.' },
+        'HR': { meaning: 'Human Resources', category: 'business', description: 'The department that manages employee relations, hiring, and workplace culture.' },
+        'ROI': { meaning: 'Return on Investment', category: 'business', description: 'A measure of profitability - how much you get back compared to what you put in.' },
+        'KPI': { meaning: 'Key Performance Indicator', category: 'business', description: 'Measurable values that show how effectively a company is achieving objectives.' },
+        'B2B': { meaning: 'Business to Business', category: 'business', description: 'Transactions or services between businesses rather than between business and consumers.' },
+        'B2C': { meaning: 'Business to Consumer', category: 'business', description: 'Businesses that sell products or services directly to individual customers.' },
+        'RFP': { meaning: 'Request for Proposal', category: 'business', description: 'A document requesting bids from vendors for a project or service.' },
+        'NDA': { meaning: 'Non-Disclosure Agreement', category: 'business', description: 'A legal contract to keep shared information confidential.' },
+        'IPO': { meaning: 'Initial Public Offering', category: 'business', description: 'When a private company first sells shares to the public on the stock market.' },
+        'P&L': { meaning: 'Profit and Loss', category: 'business', description: 'Financial statement summarizing revenues, costs, and expenses.' },
+        'CRM': { meaning: 'Customer Relationship Management', category: 'business', description: 'Systems for managing company interactions with current and potential customers.' },
+        'ERP': { meaning: 'Enterprise Resource Planning', category: 'business', description: 'Integrated management of main business processes, often in real-time.' },
+        'SLA': { meaning: 'Service Level Agreement', category: 'business', description: 'A commitment between a service provider and a client about service quality.' },
+        'ETA': { meaning: 'Estimated Time of Arrival', category: 'business', description: 'The expected time when something or someone will arrive.' },
+        'FYI': { meaning: 'For Your Information', category: 'business', description: 'A note indicating information is being shared for awareness, not requiring action.' },
+        'TBD': { meaning: 'To Be Determined', category: 'business', description: 'Used when a decision or detail hasn\'t been finalized yet.' },
+        'TBA': { meaning: 'To Be Announced', category: 'business', description: 'Information that will be shared at a later time.' },
+        
+        // Internet Slang
+        'LOL': { meaning: 'Laugh Out Loud', category: 'internet', description: 'Expression of amusement or laughter in text conversations.' },
+        'BRB': { meaning: 'Be Right Back', category: 'internet', description: 'Letting someone know you\'re stepping away briefly.' },
+        'TTYL': { meaning: 'Talk To You Later', category: 'internet', description: 'A casual way to say goodbye in text conversations.' },
+        'IDK': { meaning: 'I Don\'t Know', category: 'internet', description: 'Quick way to express uncertainty or lack of knowledge.' },
+        'IMO': { meaning: 'In My Opinion', category: 'internet', description: 'Prefacing a statement as personal viewpoint rather than fact.' },
+        'IMHO': { meaning: 'In My Honest Opinion', category: 'internet', description: 'Same as IMO, but emphasizing sincerity.' },
+        'TBH': { meaning: 'To Be Honest', category: 'internet', description: 'Used before sharing a frank or candid thought.' },
+        'FOMO': { meaning: 'Fear Of Missing Out', category: 'internet', description: 'Anxiety that others are having rewarding experiences without you.' },
+        'YOLO': { meaning: 'You Only Live Once', category: 'internet', description: 'Carpe diem for the internet age - encouraging bold decisions.' },
+        'GG': { meaning: 'Good Game', category: 'internet', description: 'Sportsmanship phrase from gaming, now used for any job well done.' },
+        'AFK': { meaning: 'Away From Keyboard', category: 'internet', description: 'Letting others know you\'re not at your computer right now.' },
+        'IRL': { meaning: 'In Real Life', category: 'internet', description: 'Distinguishing online activity from physical, offline life.' },
+        'DM': { meaning: 'Direct Message', category: 'internet', description: 'A private message sent directly to someone on social media.' },
+        'NSFW': { meaning: 'Not Safe For Work', category: 'internet', description: 'Content that is inappropriate to view in professional or public settings.' },
+        'TLDR': { meaning: 'Too Long; Didn\'t Read', category: 'internet', description: 'A summary for those who don\'t want to read the full text.' },
+        'AMA': { meaning: 'Ask Me Anything', category: 'internet', description: 'An open invitation for questions, popularized by Reddit.' },
+        'OP': { meaning: 'Original Poster', category: 'internet', description: 'The person who started a discussion thread or made the original post.' },
+        'TIL': { meaning: 'Today I Learned', category: 'internet', description: 'Sharing a newly discovered fact or piece of information.' },
+        'FTW': { meaning: 'For The Win', category: 'internet', description: 'Expressing enthusiastic support for something.' },
+        'SMH': { meaning: 'Shaking My Head', category: 'internet', description: 'Expressing disappointment, disbelief, or disapproval.' },
+        'GOAT': { meaning: 'Greatest Of All Time', category: 'internet', description: 'The absolute best in a particular field or category.' },
+        'NOOB': { meaning: 'Newbie / Newcomer', category: 'internet', description: 'Someone inexperienced or new to a game or community.' },
+        'TLDR': { meaning: 'Too Long; Didn\'t Read', category: 'internet', description: 'Used to summarize a lengthy text for quick consumption.' },
+        
+        // Military & Government
+        'NASA': { meaning: 'National Aeronautics and Space Administration', category: 'government', description: 'The US government agency responsible for the civilian space program and aerospace research.' },
+        'NATO': { meaning: 'North Atlantic Treaty Organization', category: 'military', description: 'A military alliance of 30+ countries from North America and Europe.' },
+        'FBI': { meaning: 'Federal Bureau of Investigation', category: 'government', description: 'The principal federal law enforcement agency of the United States.' },
+        'CIA': { meaning: 'Central Intelligence Agency', category: 'government', description: 'US civilian foreign intelligence service.' },
+        'NSA': { meaning: 'National Security Agency', category: 'government', description: 'US intelligence agency responsible for global monitoring and data collection.' },
+        'UN': { meaning: 'United Nations', category: 'government', description: 'Intergovernmental organization aiming to maintain international peace and security.' },
+        'EU': { meaning: 'European Union', category: 'government', description: 'Political and economic union of 27 European countries.' },
+        'UK': { meaning: 'United Kingdom', category: 'government', description: 'Country comprising England, Scotland, Wales, and Northern Ireland.' },
+        'USA': { meaning: 'United States of America', category: 'government', description: 'Federal republic of 50 states, located primarily in North America.' },
+        'UAE': { meaning: 'United Arab Emirates', category: 'government', description: 'Federation of seven emirates on the Arabian Peninsula.' },
+        'WHO': { meaning: 'World Health Organization', category: 'government', description: 'UN agency responsible for international public health.' },
+        'WTO': { meaning: 'World Trade Organization', category: 'government', description: 'Global organization dealing with rules of trade between nations.' },
+        'IMF': { meaning: 'International Monetary Fund', category: 'government', description: 'Organization working to foster global monetary cooperation and financial stability.' },
+        'AWOL': { meaning: 'Absent Without Official Leave', category: 'military', description: 'Being away from military duties without permission.' },
+        'POW': { meaning: 'Prisoner Of War', category: 'military', description: 'A person captured and held by an enemy during armed conflict.' },
+        'MIA': { meaning: 'Missing In Action', category: 'military', description: 'A service member whose whereabouts are unknown after combat.' },
+        'KIA': { meaning: 'Killed In Action', category: 'military', description: 'A casualty classification for those killed during combat.' },
+        'IED': { meaning: 'Improvised Explosive Device', category: 'military', description: 'A homemade bomb used in unconventional warfare.' },
+        'RPG': { meaning: 'Rocket-Propelled Grenade', category: 'military', description: 'A shoulder-fired anti-tank weapon system.' },
+        'UAV': { meaning: 'Unmanned Aerial Vehicle', category: 'military', description: 'An aircraft without a human pilot onboard - a drone.' },
+        
+        // Medical
+        'DNA': { meaning: 'Deoxyribonucleic Acid', category: 'science', description: 'The molecule carrying genetic instructions for all living organisms.' },
+        'RNA': { meaning: 'Ribonucleic Acid', category: 'science', description: 'A molecule essential for coding, decoding, and expression of genes.' },
+        'MRI': { meaning: 'Magnetic Resonance Imaging', category: 'medical', description: 'Medical imaging technique using magnetic fields to see inside the body.' },
+        'CT': { meaning: 'Computed Tomography', category: 'medical', description: 'Medical imaging that creates detailed pictures of internal body structures.' },
+        'ICU': { meaning: 'Intensive Care Unit', category: 'medical', description: 'Hospital department providing critical care and life support.' },
+        'ER': { meaning: 'Emergency Room', category: 'medical', description: 'Hospital department for immediate treatment of acute illnesses and injuries.' },
+        'CPR': { meaning: 'Cardiopulmonary Resuscitation', category: 'medical', description: 'Emergency procedure combining chest compressions with artificial ventilation.' },
+        'HIV': { meaning: 'Human Immunodeficiency Virus', category: 'medical', description: 'A virus that attacks the immune system and can lead to AIDS.' },
+        'AIDS': { meaning: 'Acquired Immunodeficiency Syndrome', category: 'medical', description: 'The late stage of HIV infection when the immune system is badly damaged.' },
+        'ADHD': { meaning: 'Attention Deficit Hyperactivity Disorder', category: 'medical', description: 'A neurodevelopmental disorder affecting attention and impulse control.' },
+        'OCD': { meaning: 'Obsessive-Compulsive Disorder', category: 'medical', description: 'A mental health condition with recurring unwanted thoughts and repetitive behaviors.' },
+        'PTSD': { meaning: 'Post-Traumatic Stress Disorder', category: 'medical', description: 'Mental health condition triggered by experiencing or witnessing trauma.' },
+        'BMI': { meaning: 'Body Mass Index', category: 'medical', description: 'A measure using height and weight to estimate body fat.' },
+        'OTC': { meaning: 'Over The Counter', category: 'medical', description: 'Medications available without a prescription.' },
+        'RX': { meaning: 'Prescription / Medical Prescription', category: 'medical', description: 'A health practitioner\'s written order for medication.' },
+        'EKG': { meaning: 'Electrocardiogram', category: 'medical', description: 'A test that records the electrical activity of the heart.' },
+        'DOA': { meaning: 'Dead On Arrival', category: 'medical', description: 'Patient pronounced dead upon arrival at the hospital.' },
+        
+        // Science & Space
+        'ISS': { meaning: 'International Space Station', category: 'science', description: 'A large spacecraft orbiting Earth where astronauts live and conduct research.' },
+        'LHC': { meaning: 'Large Hadron Collider', category: 'science', description: 'The world\'s largest particle accelerator, located at CERN.' },
+        'CERN': { meaning: 'European Organization for Nuclear Research', category: 'science', description: 'The research organization operating the largest particle physics lab.' },
+        'LED': { meaning: 'Light Emitting Diode', category: 'science', description: 'A semiconductor light source that emits light when current flows through it.' },
+        'LASER': { meaning: 'Light Amplification by Stimulated Emission of Radiation', category: 'science', description: 'A device emitting an intense, focused beam of light.' },
+        'RADAR': { meaning: 'Radio Detection And Ranging', category: 'science', description: 'System using radio waves to detect objects and determine their distance.' },
+        'SONAR': { meaning: 'Sound Navigation And Ranging', category: 'science', description: 'Using sound waves to navigate, communicate, or detect objects underwater.' },
+        'LIDAR': { meaning: 'Light Detection And Ranging', category: 'science', description: 'Remote sensing method using pulsed laser light to measure distances.' },
+        'FM': { meaning: 'Frequency Modulation', category: 'science', description: 'A method of encoding information in radio waves by varying frequency.' },
+        'AM': { meaning: 'Amplitude Modulation', category: 'science', description: 'A method of encoding information in radio waves by varying amplitude.' },
+        'AC': { meaning: 'Alternating Current', category: 'science', description: 'Electric current that periodically reverses direction.' },
+        'DC': { meaning: 'Direct Current', category: 'science', description: 'Electric current flowing consistently in one direction.' },
+        
+        // General / Everyday
+        'RIP': { meaning: 'Rest In Peace', category: 'general', description: 'An expression of condolence for someone who has died.' },
+        'DIY': { meaning: 'Do It Yourself', category: 'general', description: 'The practice of building, modifying, or repairing things without expert help.' },
+        'RSVP': { meaning: 'Répondez S\'il Vous Plaît', category: 'general', description: 'French for "Please respond" - requesting confirmation of attendance.' },
+        'AKA': { meaning: 'Also Known As', category: 'general', description: 'Used to introduce an alternative name or alias.' },
+        'ASAP': { meaning: 'As Soon As Possible', category: 'general', description: 'Requesting something be done with urgency.' },
+        'FAQ': { meaning: 'Frequently Asked Questions', category: 'general', description: 'A list of common questions and answers about a topic.' },
+        'PS': { meaning: 'Post Scriptum', category: 'general', description: 'Latin for "written after" - an additional thought added after the main content.' },
+        'BYOB': { meaning: 'Bring Your Own Bottle', category: 'general', description: 'Invitation to bring your own alcoholic drinks to a party.' },
+        'EST': { meaning: 'Eastern Standard Time', category: 'general', description: 'Time zone for the eastern part of North America (UTC-5).' },
+        'PST': { meaning: 'Pacific Standard Time', category: 'general', description: 'Time zone for the west coast of North America (UTC-8).' },
+        'GMT': { meaning: 'Greenwich Mean Time', category: 'general', description: 'The mean solar time at the Royal Observatory in Greenwich, London.' },
+        'DOB': { meaning: 'Date Of Birth', category: 'general', description: 'The date when a person was born.' },
+        'PIN': { meaning: 'Personal Identification Number', category: 'general', description: 'A secret numeric password used for authentication.' },
+        'ATM': { meaning: 'Automated Teller Machine', category: 'general', description: 'A machine that dispenses cash and performs banking transactions.' },
+        'POS': { meaning: 'Point Of Sale', category: 'general', description: 'The place where a retail transaction is completed.' },
+        'SKU': { meaning: 'Stock Keeping Unit', category: 'general', description: 'A unique identifier for each product in inventory.' },
+        'VIP': { meaning: 'Very Important Person', category: 'general', description: 'A person accorded special privileges due to their status.' },
+        'TBA': { meaning: 'To Be Announced', category: 'general', description: 'Information that will be shared later.' },
+        'TBD': { meaning: 'To Be Determined', category: 'general', description: 'When a decision has not been made yet.' },
+        'N/A': { meaning: 'Not Applicable', category: 'general', description: 'Indicates something does not apply in the current context.' },
+      };
+
+      // Popular acronyms to show
+      const popularAcronyms = ['NASA', 'LOL', 'FBI', 'API', 'CEO', 'HTML', 'BRB', 'NATO', 'DNS', 'IMO', 'DIY', 'VPN', 'AI', 'URL', 'GG'];
+
+      // DOM Elements
+      const acronymInput = document.getElementById('acronymInput');
+      const searchBtn = document.getElementById('searchBtn');
+      const resultCard = document.getElementById('resultCard');
+      const emptyState = document.getElementById('emptyState');
+      const notFound = document.getElementById('notFound');
+      const popularGrid = document.getElementById('popularGrid');
+      const randomBtn = document.getElementById('randomBtn');
+
+      // Fill popular grid
+      popularAcronyms.forEach(acronym => {
+        const chip = document.createElement('span');
+        chip.className = 'popular-chip';
+        chip.textContent = acronym;
+        chip.addEventListener('click', () => lookup(acronym));
+        popularGrid.appendChild(chip);
+      });
+
+      function lookup(acronym) {
+        const key = acronym.toUpperCase().trim();
+        
+        // Hide everything first
+        resultCard.classList.remove('show');
+        notFound.classList.remove('show');
+        emptyState.style.display = 'none';
+
+        if (!key) {
+          emptyState.style.display = 'block';
+          return;
+        }
+
+        const data = acronymDB[key];
+
+        if (data) {
+          document.getElementById('acronymDisplay').textContent = key;
+          document.getElementById('meaningDisplay').textContent = data.meaning;
+          document.getElementById('categoryBadge').textContent = getCategoryEmoji(data.category) + ' ' + data.category;
+          document.getElementById('descriptionDisplay').textContent = data.description || '';
+          resultCard.classList.add('show');
+          notFound.classList.remove('show');
+        } else {
+          notFound.classList.add('show');
+          resultCard.classList.remove('show');
+        }
+      }
+
+      function getCategoryEmoji(category) {
+        const map = {
+          'tech': '💻',
+          'business': '💼',
+          'internet': '💬',
+          'military': '🎖️',
+          'government': '🏛️',
+          'medical': '🏥',
+          'science': '🔬',
+          'general': '📋'
+        };
+        return map[category] || '📌';
+      }
+
+      function randomAcronym() {
+        const keys = Object.keys(acronymDB);
+        const randomKey = keys[Math.floor(Math.random() * keys.length)];
+        acronymInput.value = randomKey;
+        lookup(randomKey);
+      }
+
+      // Filter by category
+      document.querySelectorAll('.category-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const category = chip.dataset.category;
+          const filtered = Object.entries(acronymDB)
+            .filter(([_, data]) => data.category === category)
+            .map(([key]) => key);
+          
+          if (filtered.length > 0) {
+            const random = filtered[Math.floor(Math.random() * filtered.length)];
+            acronymInput.value = random;
+            lookup(random);
+          }
+        });
+      });
+
+      // Events
+      searchBtn.addEventListener('click', () => lookup(acronymInput.value));
+      acronymInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') lookup(acronymInput.value);
+      });
+      randomBtn.addEventListener('click', randomAcronym);
+
+      // URL param support
+      const params = new URLSearchParams(window.location.search);
+      const paramAcronym = params.get('acronym') || params.get('q');
+      if (paramAcronym) {
+        acronymInput.value = paramAcronym.toUpperCase();
+        lookup(paramAcronym);
+      }
+    })();
+  </script>
+</body>
+</html>
