@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Train Network Simulator - Build Your Railway Empire</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #1a1a2e;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    
+    .container {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      max-width: 1200px;
+      width: 100%;
+      align-items: flex-start;
+    }
+    
+    canvas {
+      border: 2px solid #2d2d44;
+      border-radius: 1rem;
+      background: #0d1117;
+      cursor: crosshair;
+    }
+    
+    .panel {
+      background: #1e1e36;
+      border: 1px solid #3d3d5c;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      width: 280px;
+      min-width: 250px;
+      color: #e0e0e0;
+    }
+    
+    .panel h2 {
+      font-size: 1.3rem;
+      margin-bottom: 1.2rem;
+      text-align: center;
+      color: #ffd700;
+    }
+    
+    .mode-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .mode-btn {
+      padding: 0.7rem;
+      border: 2px solid #3d3d5c;
+      background: #2d2d44;
+      color: #ccc;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    
+    .mode-btn:hover {
+      border-color: #ffd700;
+      color: #ffd700;
+    }
+    
+    .mode-btn.active {
+      background: #ffd700;
+      color: #1a1a2e;
+      border-color: #ffd700;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    }
+    
+    .info-box {
+      background: #0d1117;
+      border: 1px solid #3d3d5c;
+      border-radius: 0.8rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: #aaa;
+    }
+    
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid #2d2d44;
+    }
+    
+    .stat:last-child {
+      border-bottom: none;
+    }
+    
+    .stat-value {
+      font-weight: 700;
+      color: #ffd700;
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 0.7rem;
+      border: 2px solid #3d3d5c;
+      background: #2d2d44;
+      color: #ccc;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      margin-bottom: 0.5rem;
+    }
+    
+    .btn:hover {
+      border-color: #ffd700;
+      background: #3d3d5c;
+    }
+    
+    .btn.danger {
+      border-color: #ff4444;
+      color: #ff6666;
+    }
+    
+    .btn.danger:hover {
+      background: #ff4444;
+      color: white;
+    }
+    
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+      font-size: 0.7rem;
+      color: #aaa;
+    }
+    
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffd700;
+      color: #1a1a2e;
+      padding: 0.8rem 2rem;
+      border-radius: 2rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 100;
+    }
+    
+    .toast.show {
+      opacity: 1;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .panel {
+        width: 100%;
+        max-width: 500px;
+      }
+      canvas {
+        width: 100%;
+        height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <canvas id="game"></canvas>
+    
+    <div class="panel">
+      <h2>🚂 Train Network</h2>
+      
+      <div class="mode-selector">
+        <button class="mode-btn active" data-mode="station">🏗️ Station</button>
+        <button class="mode-btn" data-mode="track">🛤️ Track</button>
+        <button class="mode-btn" data-mode="delete">🗑️ Delete</button>
+        <button class="mode-btn" data-mode="train">🚂 Add Train</button>
+      </div>
+      
+      <div class="info-box" id="instructionBox">
+        <strong>How to play:</strong><br>
+        1. Place stations on the map<br>
+        2. Connect them with tracks<br>
+        3. Add trains to run between stations<br>
+        4. Watch passengers flow!
+      </div>
+      
+      <div class="stat">
+        <span>🏗️ Stations</span>
+        <span class="stat-value" id="stationCount">0</span>
+      </div>
+      <div class="stat">
+        <span>🛤️ Tracks</span>
+        <span class="stat-value" id="trackCount">0</span>
+      </div>
+      <div class="stat">
+        <span>🚂 Trains</span>
+        <span class="stat-value" id="trainCount">0</span>
+      </div>
+      <div class="stat">
+        <span>👥 Passengers</span>
+        <span class="stat-value" id="passengerCount">0</span>
+      </div>
+      <div class="stat">
+        <span>💰 Revenue</span>
+        <span class="stat-value" id="revenue">$0</span>
+      </div>
+      
+      <button class="btn" id="autoTrainBtn">🚂 Auto-Generate Train</button>
+      <button class="btn danger" id="clearBtn">🗑️ Clear Everything</button>
+      
+      <div class="legend">
+        <span><span class="legend-dot" style="background:#4fc3f7;"></span> Station</span>
+        <span><span class="legend-dot" style="background:#ffd700;"></span> Track</span>
+        <span><span class="legend-dot" style="background:#ff6b6b;"></span> Train</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="toast" id="toast"></div>
+
+  <script>
+    (function() {
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+      
+      canvas.width = Math.min(700, window.innerWidth - 320);
+      canvas.height = Math.min(600, window.innerHeight - 40);
+      
+      // Game state
+      let mode = 'station';
+      let stations = [];
+      let tracks = [];
+      let trains = [];
+      let passengers = [];
+      let revenue = 0;
+      let selectedStation = null;
+      let mouseX = 0;
+      let mouseY = 0;
+      let stationIdCounter = 0;
+      let trainIdCounter = 0;
+      
+      // Colors
+      const COLORS = {
+        station: '#4fc3f7',
+        stationHover: '#81d4fa',
+        stationSelected: '#ffd700',
+        track: '#8d8741',
+        trackHover: '#ffd700',
+        train: '#ff6b6b',
+        passenger: '#69f0ae',
+        background: '#0d1117',
+        grid: '#1a1a2e'
+      };
+      
+      class Station {
+        constructor(x, y) {
+          this.id = stationIdCounter++;
+          this.x = x;
+          this.y = y;
+          this.name = `Station ${this.id + 1}`;
+          this.passengers = Math.floor(Math.random() * 20);
+          this.radius = 12;
+        }
+        
+        draw(ctx, isHovered, isSelected) {
+          // Outer ring
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI * 2);
+          ctx.fillStyle = isSelected ? COLORS.stationSelected : 
+                          isHovered ? COLORS.stationHover : COLORS.station;
+          ctx.fill();
+          
+          // Inner circle
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius - 2, 0, Math.PI * 2);
+          ctx.fillStyle = '#1a1a2e';
+          ctx.fill();
+          
+          // Station icon
+          ctx.fillStyle = isSelected ? '#1a1a2e' : COLORS.station;
+          ctx.font = '14px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillText('🏫', this.x, this.y + 5);
+          
+          // Passenger count
+          if (this.passengers > 0) {
+            ctx.fillStyle = '#69f0ae';
+            ctx.font = 'bold 10px system-ui';
+            ctx.fillText(this.passengers, this.x + 16, this.y - 8);
+          }
+          
+          // Name
+          ctx.fillStyle = '#aaa';
+          ctx.font = '9px system-ui';
+          ctx.fillText(this.name, this.x, this.y - this.radius - 8);
+        }
+        
+        containsPoint(x, y) {
+          const dist = Math.sqrt((x - this.x) ** 2 + (y - this.y) ** 2);
+          return dist < this.radius + 4;
+        }
+      }
+      
+      class Track {
+        constructor(station1, station2) {
+          this.from = station1;
+          this.to = station2;
+          this.length = this.calculateLength();
+        }
+        
+        calculateLength() {
+          return Math.sqrt((this.to.x - this.from.x) ** 2 + (this.to.y - this.from.y) ** 2);
+        }
+        
+        draw(ctx) {
+          ctx.beginPath();
+          ctx.moveTo(this.from.x, this.from.y);
+          ctx.lineTo(this.to.x, this.to.y);
+          ctx.strokeStyle = COLORS.track;
+          ctx.lineWidth = 4;
+          ctx.stroke();
+          
+          // Dashed inner line
+          ctx.beginPath();
+          ctx.moveTo(this.from.x, this.from.y);
+          ctx.lineTo(this.to.x, this.to.y);
+          ctx.strokeStyle = '#ffd700';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([8, 8]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        
+        hasStations(s1, s2) {
+          return (this.from === s1 && this.to === s2) || 
+                 (this.from === s2 && this.to === s1);
+        }
+      }
+      
+      class Train {
+        constructor(station1, station2) {
+          this.id = trainIdCounter++;
+          this.from = station1;
+          this.to = station2;
+          this.x = station1.x;
+          this.y = station1.y;
+          this.progress = 0;
+          this.speed = 0.003 + Math.random() * 0.005;
+          this.direction = 1; // 1 = toward 'to', -1 = toward 'from'
+          this.passengers = 0;
+          this.capacity = 15;
+        }
+        
+        update() {
+          this.progress += this.speed * this.direction;
+          
+          if (this.progress >= 1) {
+            this.progress = 1;
+            this.direction = -1;
+            // Arrived at destination
+            this.dropOffPassengers();
+            this.pickUpPassengers(this.to);
+            // Swap
+            [this.from, this.to] = [this.to, this.from];
+            revenue += this.passengers * 2;
+          } else if (this.progress <= 0) {
+            this.progress = 0;
+            this.direction = 1;
+            this.dropOffPassengers();
+            this.pickUpPassengers(this.from);
+            [this.from, this.to] = [this.to, this.from];
+            revenue += this.passengers * 2;
+          }
+          
+          // Interpolate position
+          this.x = this.from.x + (this.to.x - this.from.x) * this.progress;
+          this.y = this.from.y + (this.to.y - this.from.y) * this.progress;
+        }
+        
+        pickUpPassengers(station) {
+          const canTake = this.capacity - this.passengers;
+          const taken = Math.min(canTake, station.passengers);
+          this.passengers += taken;
+          station.passengers -= taken;
+        }
+        
+        dropOffPassengers() {
+          this.passengers = 0;
+        }
+        
+        draw(ctx) {
+          // Train body
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          
+          const angle = Math.atan2(this.to.y - this.from.y, this.to.x - this.from.x);
+          ctx.rotate(angle);
+          
+          // Engine
+          ctx.fillStyle = '#ff6b6b';
+          ctx.fillRect(-12, -6, 24, 12);
+          
+          // Cabin
+          ctx.fillStyle = '#ff4444';
+          ctx.fillRect(-14, -4, 8, 8);
+          
+          // Chimney
+          ctx.fillStyle = '#333';
+          ctx.fillRect(2, -10, 4, 6);
+          
+          // Wheels
+          ctx.fillStyle = '#333';
+          ctx.beginPath();
+          ctx.arc(-6, 7, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(6, 7, 3, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Smoke particles (just visual)
+          if (Math.random() < 0.3) {
+            ctx.fillStyle = 'rgba(200,200,200,0.5)';
+            ctx.beginPath();
+            ctx.arc(6, -14, 3 + Math.random() * 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          
+          ctx.restore();
+          
+          // Passenger count
+          if (this.passengers > 0) {
+            ctx.fillStyle = '#69f0ae';
+            ctx.font = 'bold 9px system-ui';
+            ctx.textAlign = 'center';
+            ctx.fillText('👥' + this.passengers, this.x, this.y - 16);
+          }
+        }
+      }
+      
+      function getStationAt(x, y) {
+        return stations.find(s => s.containsPoint(x, y));
+      }
+      
+      function getHoveredStation() {
+        return getStationAt(mouseX, mouseY);
+      }
+      
+      function trackExists(s1, s2) {
+        return tracks.some(t => t.hasStations(s1, s2));
+      }
+      
+      function findPath(s1, s2) {
+        return tracks.find(t => t.hasStations(s1, s2));
+      }
+      
+      function canAddTrain(s1, s2) {
+        if (s1 === s2) return false;
+        return trackExists(s1, s2);
+      }
+      
+      function generatePassengers() {
+        for (const station of stations) {
+          // Natural growth
+          if (Math.random() < 0.02) {
+            station.passengers += Math.floor(Math.random() * 5) + 1;
+          }
+          // Cap at 100
+          station.passengers = Math.min(100, station.passengers);
+        }
+      }
+      
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => {
+          toast.classList.remove('show');
+        }, 2000);
+      }
+      
+      function drawGrid() {
+        ctx.strokeStyle = COLORS.grid;
+        ctx.lineWidth = 0.5;
+        const size = 40;
+        
+        for (let x = 0; x < canvas.width; x += size) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+          ctx.stroke();
+        }
+        
+        for (let y = 0; y < canvas.height; y += size) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+      }
+      
+      function drawPreviewTrack() {
+        if (mode === 'track' && selectedStation) {
+          ctx.beginPath();
+          ctx.moveTo(selectedStation.x, selectedStation.y);
+          ctx.lineTo(mouseX, mouseY);
+          ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+          ctx.lineWidth = 4;
+          ctx.setLineDash([10, 5]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // Snap indicator
+          const hovered = getHoveredStation();
+          if (hovered && hovered !== selectedStation) {
+            ctx.beginPath();
+            ctx.arc(hovered.x, hovered.y, hovered.radius + 6, 0, Math.PI * 2);
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+        }
+      }
+      
+      function render() {
+        // Clear
+        ctx.fillStyle = COLORS.background;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        drawGrid();
+        
+        // Draw tracks
+        tracks.forEach(t => t.draw(ctx));
+        
+        // Draw track preview
+        drawPreviewTrack();
+        
+        // Draw stations
+        const hoveredStation = getHoveredStation();
+        stations.forEach(s => {
+          const isHovered = s === hoveredStation;
+          const isSelected = s === selectedStation;
+          s.draw(ctx, isHovered, isSelected);
+        });
+        
+        // Draw trains
+        trains.forEach(t => t.draw(ctx));
+        
+        // Update stats
+        document.getElementById('stationCount').textContent = stations.length;
+        document.getElementById('trackCount').textContent = tracks.length;
+        document.getElementById('trainCount').textContent = trains.length;
+        document.getElementById('passengerCount').textContent = 
+          stations.reduce((sum, s) => sum + s.passengers, 0);
+        document.getElementById('revenue').textContent = '$' + revenue;
+      }
+      
+      function handleClick(x, y) {
+        const clickedStation = getStationAt(x, y);
+        
+        switch(mode) {
+          case 'station':
+            if (!clickedStation) {
+              // Place new station
+              const station = new Station(x, y);
+              stations.push(station);
+              showToast(`🏗️ ${station.name} built!`);
+            }
+            break;
+            
+          case 'track':
+            if (clickedStation && !selectedStation) {
+              selectedStation = clickedStation;
+              showToast(`🛤️ Select destination station`);
+            } else if (clickedStation && selectedStation) {
+              if (clickedStation !== selectedStation) {
+                if (!trackExists(selectedStation, clickedStation)) {
+                  const track = new Track(selectedStation, clickedStation);
+                  tracks.push(track);
+                  showToast(`🛤️ Track built!`);
+                } else {
+                  showToast(`⚠️ Track already exists!`);
+                }
+              }
+              selectedStation = null;
+            }
+            break;
+            
+          case 'delete':
+            if (clickedStation) {
+              // Remove station, its tracks, and trains on those tracks
+              tracks = tracks.filter(t => !t.hasStations(clickedStation, clickedStation) && 
+                                          t.from !== clickedStation && t.to !== clickedStation);
+              trains = trains.filter(t => t.from !== clickedStation && t.to !== clickedStation);
+              stations = stations.filter(s => s !== clickedStation);
+              showToast(`🗑️ Station removed`);
+            }
+            break;
+            
+          case 'train':
+            if (clickedStation && !selectedStation) {
+              selectedStation = clickedStation;
+              showToast(`🚂 Select destination station`);
+            } else if (clickedStation && selectedStation) {
+              if (clickedStation !== selectedStation) {
+                if (canAddTrain(selectedStation, clickedStation)) {
+                  const train = new Train(selectedStation, clickedStation);
+                  trains.push(train);
+                  showToast(`🚂 Train deployed!`);
+                } else {
+                  showToast(`⚠️ No track between these stations!`);
+                }
+              }
+              selectedStation = null;
+            }
+            break;
+        }
+      }
+      
+      function autoGenerateTrain() {
+        if (tracks.length === 0) {
+          showToast(`⚠️ Build tracks first!`);
+          return;
+        }
+        
+        const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
+        const train = new Train(randomTrack.from, randomTrack.to);
+        trains.push(train);
+        showToast(`🚂 Auto-train deployed!`);
+      }
+      
+      function clearAll() {
+        if (confirm('Clear everything? This cannot be undone.')) {
+          stations = [];
+          tracks = [];
+          trains = [];
+          revenue = 0;
+          selectedStation = null;
+          stationIdCounter = 0;
+          trainIdCounter = 0;
+          showToast(`🗑️ All cleared!`);
+        }
+      }
+      
+      // Event listeners
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        handleClick(x, y);
+      });
+      
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+        
+        // Update cursor
+        const hovered = getHoveredStation();
+        if (hovered || (mode === 'station' && !hovered)) {
+          canvas.style.cursor = 'pointer';
+        } else {
+          canvas.style.cursor = 'crosshair';
+        }
+      });
+      
+      canvas.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        selectedStation = null;
+        showToast(`Selection cleared`);
+      });
+      
+      // Mode buttons
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          mode = btn.dataset.mode;
+          selectedStation = null;
+          
+          const instructions = {
+            station: 'Click on empty space to build a station',
+            track: 'Click first station, then second to connect',
+            delete: 'Click a station to remove it',
+            train: 'Click two connected stations to add a train'
+          };
+          document.getElementById('instructionBox').innerHTML = 
+            `<strong>${instructions[mode]}</strong>`;
+        });
+      });
+      
+      document.getElementById('autoTrainBtn').addEventListener('click', autoGenerateTrain);
+      document.getElementById('clearBtn').addEventListener('click', clearAll);
+      
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        switch(e.key.toLowerCase()) {
+          case '1': document.querySelector('[data-mode="station"]').click(); break;
+          case '2': document.querySelector('[data-mode="track"]').click(); break;
+          case '3': document.querySelector('[data-mode="delete"]').click(); break;
+          case '4': document.querySelector('[data-mode="train"]').click(); break;
+          case 'escape': selectedStation = null; showToast('Selection cleared'); break;
+          case 'a': autoGenerateTrain(); break;
+        }
+      });
+      
+      // Window resize
+      window.addEventListener('resize', () => {
+        canvas.width = Math.min(700, window.innerWidth - 320);
+        canvas.height = Math.min(600, window.innerHeight - 40);
+      });
+      
+      // Game loop
+      function gameLoop() {
+        generatePassengers();
+        trains.forEach(t => t.update());
+        render();
+        requestAnimationFrame(gameLoop);
+      }
+      
+      // Initial stations
+      stations.push(new Station(100, 200));
+      stations.push(new Station(300, 300));
+      stations.push(new Station(500, 200));
+      
+      // Initial track
+      if (stations.length >= 2) {
+        tracks.push(new Track(stations[0], stations[1]));
+        tracks.push(new Track(stations[1], stations[2]));
+      }
+      
+      // Initial train
+      if (tracks.length > 0) {
+        trains.push(new Train(stations[0], stations[1]));
+      }
+      
+      gameLoop();
+    })();
+  </script>
+</body>
+</html>
